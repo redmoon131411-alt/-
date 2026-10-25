@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>잔반톡</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Noto+Sans+KR:wght@400;500;700&display=swap">
+<style>
+/* Layout: one phone-sized chat app in a single column. Three screens (start, friend list, chat) swap inside it; on wide screens it sits centered as a card. */
+:root{
+  --bg:#E9F1E4; --app:#FBFDF9; --ink:#1F2D25; --muted:#5F7166; --line:#D5E1D3;
+  --head:#2F6B4F; --head-ink:#FFFFFF; --accent:#2F6B4F; --accent-ink:#FFFFFF;
+  --mine:#FFE07A; --mine-ink:#2B2500; --theirs:#FFFFFF; --chat:#EDF4E8; --chip:#E3F0E2;
+  --av1:#CDEBC9; --av2:#FFD9B8; --av3:#CFE3F5; --av4:#FFD3D6; --av5:#E9DDF7; --av6:#FFF0B3;
+  --font-d:'Jua','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  --font-b:'Noto Sans KR','Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0F1612; --app:#17211B; --ink:#E6EFE8; --muted:#9BB0A2; --line:#2A3A30;
+    --head:#1E4D38; --head-ink:#F2FAF4; --accent:#6CC497; --accent-ink:#0B2216;
+    --mine:#E3BF45; --mine-ink:#241D00; --theirs:#243229; --chat:#121C16; --chip:#203126;
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0F1612; --app:#17211B; --ink:#E6EFE8; --muted:#9BB0A2; --line:#2A3A30;
+  --head:#1E4D38; --head-ink:#F2FAF4; --accent:#6CC497; --accent-ink:#0B2216;
+  --mine:#E3BF45; --mine-ink:#241D00; --theirs:#243229; --chat:#121C16; --chip:#203126;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{color-scheme:light}
+html,body{height:100%;margin:0}
+body{
+  background:var(--bg); color:var(--ink); font-family:var(--font-b); font-size:16px; line-height:1.5;
+  padding-block:12px;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+}
+button,input{font:inherit;color:inherit}
+button{cursor:pointer}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+
+.app{
+  height:100%; max-height:880px; max-width:520px; margin:0 auto;
+  background:var(--app); border:1px solid var(--line); border-radius:20px; overflow:hidden;
+  display:flex; flex-direction:column;
+}
+.screen{display:flex;flex-direction:column;min-height:0;flex:1}
+
+/* start */
+.start{padding:28px 22px;gap:18px;overflow-y:auto;justify-content:center}
+.logo{font-family:var(--font-d);font-size:56px;line-height:1;color:var(--accent);margin:0}
+.lead{margin:0;font-size:18px;text-wrap:balance}
+.faces{display:flex;flex-wrap:wrap;gap:8px}
+.av{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-size:24px;flex:none}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-weight:700}
+.field input{
+  border:2px solid var(--line);background:var(--app);border-radius:14px;padding:12px 14px;font-size:18px;min-width:0;width:100%
+}
+.hint{margin:0;color:var(--muted);font-size:14px}
+.btn{
+  border:0;border-radius:14px;background:var(--accent);color:var(--accent-ink);
+  font-family:var(--font-d);font-size:20px;padding:12px 18px;min-height:48px
+}
+.btn:disabled{opacity:.5;cursor:default}
+
+/* bars */
+.bar{
+  background:var(--head);color:var(--head-ink);display:flex;align-items:center;gap:10px;
+  padding:12px 14px;min-height:60px
+}
+.bar h1{font-family:var(--font-d);font-weight:400;font-size:24px;margin:0;flex:1;min-width:0}
+.bar .who{flex:1;min-width:0}
+.bar .who b{display:block;font-family:var(--font-d);font-weight:400;font-size:20px;line-height:1.2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar .who span{display:block;font-size:13px;opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.icon-btn{
+  background:transparent;border:0;color:inherit;min-width:44px;min-height:44px;border-radius:12px;font-size:15px;padding:0 10px
+}
+.icon-btn.back{font-size:30px;line-height:1;padding:0}
+.icon-btn:hover{background:rgba(255,255,255,.14)}
+
+/* friend list */
+.list{overflow-y:auto;flex:1;min-height:0;padding:12px 14px 18px;display:flex;flex-direction:column;gap:6px}
+.mission{
+  margin:0 0 6px;padding:12px 14px;border-radius:14px;background:var(--chip);font-size:16px
+}
+.group{margin:10px 2px 2px;font-size:14px;font-weight:700;color:var(--muted)}
+.friends{list-style:none;margin:0;padding:0;display:flex;flex-direction:column}
+.friend{
+  width:100%;display:flex;align-items:center;gap:12px;text-align:left;
+  background:transparent;border:0;border-radius:14px;padding:8px 6px;min-height:68px
+}
+.friend:hover{background:var(--chip)}
+.friend .av{width:54px;height:54px;font-size:30px}
+.friend .txt{min-width:0;flex:1}
+.friend .nm{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.friend .nm b{font-family:var(--font-d);font-weight:400;font-size:19px}
+.tag{font-size:12px;padding:1px 8px;border-radius:999px;background:var(--chip);color:var(--muted)}
+.friend .st{display:block;color:var(--muted);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.foot{margin-top:auto;padding-top:14px}
+.link{background:transparent;border:0;color:var(--muted);text-decoration:underline;font-size:14px;padding:8px 2px;min-height:40px}
+
+/* chat */
+.log{flex:1;min-height:0;overflow-y:auto;background:var(--chat);padding:14px 12px;display:flex;flex-direction:column;gap:12px}
+.day{align-self:center;font-size:13px;color:var(--muted);background:var(--app);padding:2px 12px;border-radius:999px;border:1px solid var(--line)}
+.row{display:flex;gap:8px;align-items:flex-start;max-width:100%}
+.row.me{justify-content:flex-end}
+.row .av{width:40px;height:40px;font-size:22px}
+.col{display:flex;flex-direction:column;gap:3px;min-width:0;max-width:78%}
+.col small{font-size:13px;color:var(--muted)}
+.bubble{
+  margin:0;padding:10px 14px;border-radius:4px 18px 18px 18px;background:var(--theirs);
+  font-size:17px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid var(--line)
+}
+.row.me .bubble{border-radius:18px 4px 18px 18px;background:var(--mine);color:var(--mine-ink);border-color:transparent;max-width:78%}
+.notice{align-self:center;max-width:88%;text-align:center;font-size:14px;color:var(--muted);background:var(--app);border:1px dashed var(--line);border-radius:12px;padding:8px 12px}
+.typing{display:inline-flex;gap:5px;align-items:center;min-height:27px}
+.typing i{width:8px;height:8px;border-radius:50%;background:var(--muted);animation:bob 1s infinite ease-in-out}
+.typing i:nth-child(2){animation-delay:.15s}
+.typing i:nth-child(3){animation-delay:.3s}
+@keyframes bob{0%,80%,100%{opacity:.3;transform:translateY(0)}40%{opacity:1;transform:translateY(-4px)}}
+@media (prefers-reduced-motion: reduce){.typing i{animation:none;opacity:.7}}
+
+.chips{display:flex;flex-wrap:wrap;gap:8px;padding:10px 12px 4px;background:var(--app);border-top:1px solid var(--line)}
+.chip{
+  border:2px solid var(--accent);background:var(--app);color:var(--ink);border-radius:999px;
+  padding:6px 14px;font-size:15px;min-height:40px
+}
+.chip:hover{background:var(--chip)}
+.chip:disabled{opacity:.45;cursor:default}
+.compose{display:flex;gap:8px;padding:8px 12px 12px;background:var(--app)}
+.compose input{
+  flex:1;min-width:0;border:2px solid var(--line);background:var(--app);border-radius:999px;padding:10px 16px;font-size:17px
+}
+.compose .btn{border-radius:999px;font-size:18px;padding:0 20px}
+</style>
+
+</head>
+<body>
+<div class="app">
+  <!-- 시작 -->
+  <section id="s-start" class="screen start">
+    <h1 class="logo">잔반톡</h1>
+    <p class="lead">급식을 왜 남기게 될까? 급식실 친구들에게 직접 물어봐요.</p>
+    <div class="faces" aria-hidden="true">
+      <span class="av" style="background:var(--av1)">🥗</span>
+      <span class="av" style="background:var(--av2)">🍲</span>
+      <span class="av" style="background:var(--av3)">🐢</span>
+      <span class="av" style="background:var(--av4)">🐰</span>
+      <span class="av" style="background:var(--av5)">🐭</span>
+      <span class="av" style="background:var(--av6)">🐶</span>
+    </div>
+    <form id="f-start" class="field">
+      <label for="nick">내 별명을 적어 주세요</label>
+      <input id="nick" maxlength="8" autocomplete="off" placeholder="예: 별이">
+      <p class="hint">진짜 이름은 쓰지 않아도 돼요.</p>
+      <button class="btn" type="submit" style="margin-top:8px">들어가기</button>
+    </form>
+  </section>
+
+  <!-- 친구 목록 -->
+  <section id="s-list" class="screen" hidden>
+    <header class="bar"><h1>친구</h1></header>
+    <div class="list">
+      <p class="mission" id="mission"></p>
+      <h2 class="group">어른 친구 2명</h2>
+      <ul class="friends" id="adults"></ul>
+      <h2 class="group">어린이 친구 4명</h2>
+      <ul class="friends" id="kids"></ul>
+      <div class="foot"><button class="link" id="reset" type="button">처음부터 다시 시작</button></div>
+    </div>
+  </section>
+
+  <!-- 대화 -->
+  <section id="s-chat" class="screen" hidden>
+    <header class="bar">
+      <button class="icon-btn back" id="back" type="button" aria-label="친구 목록으로">‹</button>
+      <div class="who"><b id="c-name"></b><span id="c-role"></span></div>
+      <button class="icon-btn" id="clear" type="button">대화 지우기</button>
+    </header>
+    <div class="log" id="log" aria-live="polite"></div>
+    <div class="chips" id="chips"></div>
+    <form class="compose" id="f-msg">
+      <input id="msg" maxlength="100" autocomplete="off" placeholder="궁금한 걸 써 보세요" aria-label="메시지">
+      <button class="btn" id="send" type="submit">보내기</button>
+    </form>
+  </section>
+</div>
+
+<script>
+(() => {
+  const $ = s => document.querySelector(s);
+
+  const FRIENDS = [
+    { id:'dietitian', group:'adult', name:'영양사 선생님', tag:'영양사', emoji:'🥗', av:'--av1',
+      status:'오늘 급식, 맛있게 먹었나요?',
+      greet:'안녕하세요! 저는 급식 식단을 짜는 영양사 선생님이에요. 궁금한 걸 물어보세요.',
+      chips:['급식 메뉴는 어떻게 정해요?','왜 채소를 먹어야 해요?','음식이 남으면 어떻게 돼요?'] },
+    { id:'server', group:'adult', name:'배식 선생님', tag:'배식 담당', emoji:'🍲', av:'--av2',
+      status:'먹을 만큼만 말해 주세요!',
+      greet:'어서 와요! 저는 급식실에서 음식을 나눠 주는 배식 선생님이에요. 뭐든 물어보세요.',
+      chips:['왜 이만큼만 주세요?','적게 받아도 돼요?','남은 음식은 어디로 가요?'] },
+    { id:'slow', group:'kid', name:'하늘이', tag:'천천히 먹는 친구', emoji:'🐢', av:'--av3',
+      status:'꼭꼭 씹다 보면 시간이 끝나요',
+      greet:'안녕! 나는 하늘이야. 나는 밥을 천천히 먹어. 뭐든 물어봐!',
+      chips:['왜 천천히 먹어?','밥 먹는 시간이 모자라?','남기면 기분이 어때?'] },
+    { id:'picky', group:'kid', name:'민준이', tag:'편식하는 친구', emoji:'🐰', av:'--av4',
+      status:'당근이랑 버섯은 어려워요',
+      greet:'안녕! 나는 민준이야. 나는 먹기 싫은 반찬이 좀 있어. 궁금한 거 물어봐.',
+      chips:['어떤 반찬이 싫어?','왜 그 반찬이 싫어?','조금만 먹어 볼래?'] },
+    { id:'small', group:'kid', name:'소담이', tag:'적게 먹는 친구', emoji:'🐭', av:'--av5',
+      status:'조금만 먹어도 배불러요',
+      greet:'안녕! 나는 소담이야. 나는 원래 조금만 먹어도 배가 불러. 뭐든 물어봐!',
+      chips:['왜 밥을 남겨?','배식 때 뭐라고 말하면 좋아?','먹을 만큼만 받으면 어때?'] },
+    { id:'normal', group:'kid', name:'지우', tag:'보통 친구', emoji:'🐶', av:'--av6',
+      status:'대부분 잘 먹어요. 가끔은 남겨요',
+      greet:'안녕! 나는 지우야. 나는 보통은 밥을 잘 먹어. 궁금한 거 물어봐!',
+      chips:['너도 밥 남긴 적 있어?','언제 남기게 돼?','잔반을 줄이려면 어떻게 해?'] }
+  ];
+
+  const KEY = 'janbantalk-v1';
+  let store = { nick:'', chats:{} };
+  try { const raw = localStorage.getItem(KEY); if (raw) store = Object.assign(store, JSON.parse(raw)); } catch (e) {}
+  const save = () => { try { localStorage.setItem(KEY, JSON.stringify(store)); } catch (e) {} };
+
+  const screens = { start:$('#s-start'), list:$('#s-list'), chat:$('#s-chat') };
+  function show(name){ for (const k in screens) screens[k].hidden = (k !== name); }
+
+  // 확인 단계가 필요한 버튼 (confirm 창은 쓸 수 없어요)
+  function twoStep(btn, ask, run){
+    const orig = btn.textContent; let t = null;
+    btn.addEventListener('click', () => {
+      if (t){ clearTimeout(t); t = null; btn.textContent = orig; run(); return; }
+      btn.textContent = ask;
+      t = setTimeout(() => { t = null; btn.textContent = orig; }, 3500);
+    });
+  }
+
+  // ---- 친구 목록
+  function renderList(){
+    $('#mission').textContent = `${store.nick}야, 안녕! 친구를 눌러서 물어봐요. 왜 급식을 남길까요?`;
+    for (const [sel, grp] of [['#adults','adult'], ['#kids','kid']]) {
+      const ul = $(sel); ul.textContent = '';
+      FRIENDS.filter(f => f.group === grp).forEach(f => {
+        const li = document.createElement('li');
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'friend';
+        const turns = store.chats[f.id] || [];
+        const last = turns.length ? turns[turns.length - 1].content : f.status;
+        b.innerHTML = '<span class="av"></span><span class="txt"><span class="nm"><b></b><span class="tag"></span></span><span class="st"></span></span>';
+        const av = b.querySelector('.av'); av.textContent = f.emoji; av.style.background = `var(${f.av})`;
+        b.querySelector('b').textContent = f.name;
+        b.querySelector('.tag').textContent = f.tag;
+        b.querySelector('.st').textContent = last;
+        b.addEventListener('click', () => openChat(f));
+        li.appendChild(b); ul.appendChild(li);
+      });
+    }
+  }
+
+  // ---- 대화
+  const log = $('#log'), chipsEl = $('#chips'), msg = $('#msg'), sendBtn = $('#send');
+  let current = null, ctl = null, busy = false;
+
+  const toEnd = () => { log.scrollTop = log.scrollHeight; };
+
+  function addBubble(role, text, f){
+    const row = document.createElement('div');
+    const p = document.createElement('p'); p.className = 'bubble'; p.textContent = text;
+    if (role === 'me'){
+      row.className = 'row me'; row.appendChild(p);
+    } else {
+      row.className = 'row';
+      const av = document.createElement('span'); av.className = 'av'; av.textContent = f.emoji; av.style.background = `var(${f.av})`;
+      const col = document.createElement('div'); col.className = 'col';
+      const nm = document.createElement('small'); nm.textContent = f.name;
+      col.append(nm, p); row.append(av, col);
+    }
+    log.appendChild(row); toEnd();
+    return p;
+  }
+  function addNotice(text){
+    const n = document.createElement('div'); n.className = 'notice'; n.textContent = text;
+    log.appendChild(n); toEnd();
+  }
+  function addTyping(f){
+    const p = addBubble('them', '', f);
+    p.classList.add('typing'); p.innerHTML = '<i></i><i></i><i></i>';
+    p.setAttribute('aria-label', '입력 중');
+    return p;
+  }
+
+  function setBusy(v){
+    busy = v; sendBtn.disabled = v; msg.disabled = v;
+    chipsEl.querySelectorAll('button').forEach(b => b.disabled = v);
+  }
+
+  function renderChat(){
+    const f = current;
+    $('#c-name').textContent = f.name; $('#c-role').textContent = f.tag;
+    log.textContent = '';
+    const day = document.createElement('div'); day.className = 'day'; day.textContent = '급식 이야기';
+    log.appendChild(day);
+    addBubble('them', f.greet, f);
+    (store.chats[f.id] || []).forEach(t => addBubble(t.role === 'user' ? 'me' : 'them', t.content, f));
+    chipsEl.textContent = '';
+    f.chips.forEach(q => {
+      const b = document.createElement('button'); b.type = 'button'; b.className = 'chip'; b.textContent = q;
+      b.addEventListener('click', () => send(q));
+      chipsEl.appendChild(b);
+    });
+    setBusy(false); toEnd();
+  }
+
+  function openChat(f){ current = f; renderChat(); show('chat'); }
+
+  function goBack(){
+    if (ctl) ctl.abort();
+    current = null; renderList(); show('list');
+  }
+
+  const ERR = {
+    rate_limited:'친구가 잠깐 쉬고 있어요. 조금 뒤에 다시 보내 주세요.'
+  };
+
+  async function send(text){
+    text = (text || '').trim();
+    if (!text || busy || !current) return;
+    const f = current;
+    const turns = (store.chats[f.id] = store.chats[f.id] || []);
+    turns.push({ role:'user', content:text }); save();
+    addBubble('me', text); msg.value = '';
+    setBusy(true);
+    const bubble = addTyping(f);
+    ctl = new AbortController();
+    const mine = ctl;
+    try {
+      const r = await fetch('/api/chat', {
+        method:'POST', headers:{ 'Content-Type':'application/json' }, signal:mine.signal,
+        body: JSON.stringify({ friend:f.id, nick:store.nick || '친구', turns:turns.slice(-14) })
+      });
+      if (!r.ok) throw { code: r.status === 429 ? 'rate_limited' : 'upstream_error' };
+      const data = await r.json();
+      if (!data.text) throw { code:'upstream_error' };
+      bubble.classList.remove('typing'); bubble.removeAttribute('aria-label');
+      bubble.textContent = data.text; toEnd();
+      turns.push({ role:'assistant', content:data.text }); save();
+    } catch (e) {
+      const code = (e && e.name === 'AbortError') ? 'cancelled' : ((e && e.code) || 'upstream_error');
+      if (current === f){
+        const row = bubble.closest('.row'); if (row && bubble.classList.contains('typing')) row.remove();
+        if (code !== 'cancelled') addNotice(ERR[code] || '앗, 답장이 오지 않았어요. 다시 보내 볼까요?');
+      }
+    } finally {
+      if (current === f) setBusy(false);
+      ctl = null;
+    }
+  }
+
+  // ---- 이벤트
+  $('#f-start').addEventListener('submit', e => {
+    e.preventDefault();
+    store.nick = ($('#nick').value.trim() || '친구'); save();
+    renderList(); show('list');
+  });
+  $('#f-msg').addEventListener('submit', e => { e.preventDefault(); send(msg.value); });
+  $('#back').addEventListener('click', goBack);
+  twoStep($('#clear'), '정말 지울까요?', () => {
+    if (!current) return;
+    if (ctl) ctl.abort();
+    store.chats[current.id] = []; save(); renderChat();
+  });
+  twoStep($('#reset'), '정말 처음부터 할까요?', () => {
+    if (ctl) ctl.abort();
+    store = { nick:'', chats:{} }; save(); current = null;
+    $('#nick').value = ''; show('start');
+  });
+
+  // ---- 시작
+  if (store.nick){ renderList(); show('list'); } else { show('start'); }
+})();
+</script>
+</body>
+</html>
